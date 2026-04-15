@@ -1,0 +1,580 @@
+/* =====================
+   リセット・基本
+   ===================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --border: #d0cdc6;
+  --text: #1a1a1a;
+  --text-muted: #888880;
+  --accent: #2a2a2a;
+
+  /* ゲージカラー */
+  --gauge-empty-border: #1a1a1a;
+  --gauge-order: rgba(220, 80, 80, 0.25);
+  --gauge-order-border: rgba(200, 60, 60, 0.5);
+  --gauge-active: rgba(60, 160, 80, 0.4);
+  --gauge-pause: rgba(230, 140, 40, 0.4);
+  --gauge-done: rgba(60, 100, 200, 0.4);
+
+  /* ボタン */
+  --btn-green: #3a9e52;
+  --btn-orange: #e08020;
+  --btn-blue: #3a64c8;
+  --btn-gray: #888;
+
+  --radius: 4px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+
+body {
+  font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* =====================
+   レイアウト
+   ===================== */
+#app {
+  display: flex;
+  height: 100vh;
+  gap: 0;
+}
+
+#calendar-area {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+#order-panel {
+  flex: 1;
+  min-width: 240px;
+  max-width: 320px;
+  padding: 16px 14px;
+  overflow-y: auto;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+}
+
+/* =====================
+   カレンダーヘッダー
+   ===================== */
+#calendar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+#week-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.nav-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text);
+  transition: background 0.15s;
+}
+.nav-btn:hover {
+  background: var(--border);
+}
+
+/* =====================
+   カレンダーグリッド
+   ===================== */
+#calendar-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.week-row {
+  display: grid;
+  grid-template-columns: 48px repeat(7, 1fr);
+  border-bottom: 1px solid var(--border);
+  min-height: 64px;
+}
+
+.week-row.header-row {
+  min-height: 28px;
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 10;
+  border-bottom: 2px solid var(--border);
+}
+
+/* 4週表示を縦いっぱいに伸ばす（PC向け） */
+.week-row.data-row {
+  flex: 1;
+  min-height: 0;
+}
+
+.week-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--text-muted);
+  border-right: 1px solid var(--border);
+}
+
+.day-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  border-right: 1px solid var(--border);
+  gap: 1px;
+}
+.day-header:last-child { border-right: none; }
+
+.day-header .dow { color: var(--text-muted); font-weight: 400; }
+.day-header .date-num { font-size: 13px; }
+.day-header.today .date-num {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-cell {
+  position: relative;
+  border-right: 1px solid var(--border);
+  padding: 4px 3px;
+  min-height: 64px;
+  vertical-align: top;
+}
+.day-cell:last-child { border-right: none; }
+.day-cell.off-day {
+  background: #f0eeea;
+}
+.day-cell.no-schedule {
+  background: #faf9f7;
+}
+
+/* 稼働ゲージ（黒枠） */
+.gauge-bar {
+  height: 8px;
+  border: 1.5px solid var(--gauge-empty-border);
+  border-radius: 3px;
+  margin-bottom: 3px;
+  background: transparent;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ゲージ内の塗り（状態別の積み上げ） */
+.gauge-fill {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+.gauge-seg {
+  height: 100%;
+}
+.gauge-seg.status-pending { background: var(--gauge-order); }
+.gauge-seg.status-active { background: var(--gauge-active); }
+.gauge-seg.status-pause { background: var(--gauge-pause); }
+.gauge-seg.status-done { background: var(--gauge-done); }
+
+/* 稼働日が連続する場合はゲージをつなげて見せる */
+.gauge-bar.gauge-continue-left {
+  border-left: none;
+  border-radius: 0 3px 3px 0;
+}
+.gauge-bar.gauge-continue-right {
+  border-right: none;
+  border-radius: 3px 0 0 3px;
+}
+
+/* 受注リボン */
+.order-ribbon {
+  height: 8px;
+  border-radius: 2px;
+  margin-bottom: 2px;
+  position: relative;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  display: flex;
+  align-items: center;
+}
+.order-ribbon:hover { opacity: 0.8; }
+
+.order-ribbon.status-pending {
+  background: var(--gauge-order);
+  border: 1px solid var(--gauge-order-border);
+}
+.order-ribbon.status-active {
+  background: var(--gauge-active);
+  border: 1px solid rgba(60,160,80,0.6);
+}
+.order-ribbon.status-pause {
+  background: var(--gauge-pause);
+  border: 1px solid rgba(230,140,40,0.6);
+}
+.order-ribbon.status-done {
+  background: var(--gauge-done);
+  border: 1px solid rgba(60,100,200,0.6);
+}
+
+/* リボンの左端に隙間 */
+.order-ribbon.ribbon-continue-left {
+  border-left: none;
+  border-radius: 0 2px 2px 0;
+}
+.order-ribbon.ribbon-continue-right {
+  border-right: none;
+  border-radius: 2px 0 0 2px;
+}
+
+/* フラッグ */
+.flag {
+  position: absolute;
+  top: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  z-index: 5;
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flag.delivery-flag {
+  background: #5a9e6a;
+  color: #fff;
+  right: 14px;
+}
+.flag.due-flag {
+  background: #c05050;
+  color: #fff;
+  right: 2px;
+}
+
+/* =====================
+   発注パネル
+   ===================== */
+#order-panel h2 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.input-group {
+  margin-bottom: 10px;
+}
+.input-group label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+.input-group input,
+.input-group select,
+.input-group textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+  border-color: var(--accent);
+}
+.input-group textarea {
+  resize: vertical;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 14px 0;
+}
+
+/* =====================
+   ボタン
+   ===================== */
+.btn-primary {
+  width: 100%;
+  padding: 8px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.btn-primary:hover { opacity: 0.85; }
+
+.btn-secondary {
+  padding: 6px 12px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text);
+  transition: background 0.15s;
+}
+.btn-secondary:hover { background: var(--border); }
+
+/* =====================
+   警告
+   ===================== */
+.warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: var(--radius);
+  padding: 7px 10px;
+  font-size: 12px;
+  margin-bottom: 8px;
+  color: #856404;
+}
+
+/* =====================
+   タイマーパネル
+   ===================== */
+#timer-panel {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  z-index: 100;
+  min-width: 300px;
+  text-align: center;
+}
+
+#timer-info {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+#timer-elapsed {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 8px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+#timer-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.timer-btn {
+  padding: 7px 16px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  transition: opacity 0.15s;
+}
+.timer-btn:hover { opacity: 0.85; }
+.timer-btn.green { background: var(--btn-green); }
+.timer-btn.orange { background: var(--btn-orange); }
+.timer-btn.blue { background: var(--btn-blue); }
+
+/* =====================
+   モーダル
+   ===================== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 400px;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* マスター編集テーブル */
+.master-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+}
+.master-table th {
+  text-align: left;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.master-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.master-table input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+.master-table .btn-del {
+  background: none;
+  border: none;
+  color: #c05050;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+}
+
+/* =====================
+   フラッグポップアップ
+   ===================== */
+#flag-popup {
+  position: fixed;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+  z-index: 150;
+  min-width: 200px;
+  font-size: 12px;
+}
+
+#flag-popup-content {
+  margin-bottom: 8px;
+  line-height: 1.7;
+}
+
+/* =====================
+   ユーティリティ
+   ===================== */
+.hidden { display: none !important; }
+
+/* スクロールバー */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* レスポンシブ（モバイル） */
+@media (max-width: 768px) {
+  #app {
+    flex-direction: column;
+    height: auto;
+    overflow: auto;
+  }
+  #calendar-area {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow: visible;
+  }
+  #order-panel {
+    max-width: 100%;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+  body {
+    overflow: auto;
+    height: auto;
+  }
+}
+
+/* 各セルの日付ラベル */
+.cell-date {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+  line-height: 1;
+}
+.day-cell.today .cell-date {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ヘッダー行の週番号列を削除したので幅調整 */
+.week-row {
+  grid-template-columns: repeat(7, 1fr);
+}
+.week-row.header-row {
+  grid-template-columns: repeat(7, 1fr);
+}
