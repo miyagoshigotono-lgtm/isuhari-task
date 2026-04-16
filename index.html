@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>椅子張りタスク管理</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a1a1a">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- 左4分の3：カレンダーエリア -->
+    <div id="calendar-area">
+      <div id="left-tabs">
+        <button id="tab-calendar" class="left-tab active">カレンダー</button>
+        <button id="tab-review" class="left-tab">案件レビュー</button>
+      </div>
+      <div id="calendar-view" class="left-view active">
+        <div id="calendar-header">
+          <button id="prev-week" class="nav-btn">◀</button>
+          <span id="week-label"></span>
+          <button id="next-week" class="nav-btn">▶</button>
+        </div>
+        <div id="calendar-summary"></div>
+        <div id="calendar-grid"></div>
+        <div id="day-detail-panel" class="hidden">
+          <div class="day-detail-header">
+            <div>
+              <div id="day-detail-date"></div>
+              <div id="day-detail-subtitle"></div>
+            </div>
+            <button id="day-detail-close" class="btn-secondary">閉じる</button>
+          </div>
+          <div id="day-detail-metrics"></div>
+          <div id="day-detail-orders"></div>
+        </div>
+      </div>
+      <div id="review-view" class="left-view hidden">
+        <div id="review-toolbar">
+          <input id="review-search" type="search" placeholder="取引先・品目・注記で検索">
+          <select id="review-status-filter">
+            <option value="all">全状態</option>
+            <option value="pending">未着手</option>
+            <option value="active">進行中</option>
+            <option value="pause">中断</option>
+            <option value="done">完了</option>
+          </select>
+          <select id="review-client-filter">
+            <option value="all">全取引先</option>
+          </select>
+          <select id="review-sort">
+            <option value="dueAsc">納期が近い順</option>
+            <option value="dueDesc">納期が遠い順</option>
+            <option value="diffDesc">差分が大きい順</option>
+            <option value="elapsedDesc">実績時間が多い順</option>
+          </select>
+        </div>
+        <div id="review-summary"></div>
+        <div id="review-aggregates"></div>
+        <div id="review-list"></div>
+      </div>
+    </div>
+
+    <!-- 右4分の1：発注入力パネル -->
+    <div id="order-panel">
+      <h2>発注入力</h2>
+      <div class="input-group">
+        <label>取引先</label>
+        <select id="client-select"></select>
+      </div>
+      <div class="input-group">
+        <label>品目</label>
+        <select id="item-select"></select>
+      </div>
+      <div class="input-group">
+        <label>脚数</label>
+        <input type="number" id="quantity" min="1" step="1" value="1">
+      </div>
+      <div class="input-group">
+        <label>材料搬入日</label>
+        <input type="date" id="delivery-date">
+      </div>
+      <div class="input-group">
+        <label>希望納期</label>
+        <input type="date" id="due-date">
+      </div>
+      <div class="input-group">
+        <label>注記</label>
+        <textarea id="note" rows="3"></textarea>
+      </div>
+      <div id="order-warning" class="warning hidden">⚠️ 工数がパンクしています</div>
+      <button id="order-submit" class="btn-primary">発注確定</button>
+
+      <hr>
+
+      <h2>マスター管理</h2>
+      <button id="open-master" class="btn-secondary">品目・取引先を編集</button>
+
+      <hr>
+
+      <h2>バックアップ</h2>
+      <div class="panel-actions">
+        <button id="btn-export-data" class="btn-secondary">JSONを書き出し</button>
+        <label for="import-data-file" class="btn-secondary file-label">JSONを復元</label>
+        <input id="import-data-file" type="file" accept=".json,application/json" class="hidden">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- タイマーパネル（案件クリック時に表示） -->
+  <div id="timer-panel" class="hidden">
+    <div id="timer-info"></div>
+    <div id="timer-buttons">
+      <button id="btn-start" class="timer-btn green">着手</button>
+      <button id="btn-pause" class="timer-btn orange hidden">中断</button>
+      <button id="btn-resume" class="timer-btn green hidden">再開</button>
+      <button id="btn-complete" class="timer-btn blue hidden">完了</button>
+    </div>
+    <div id="timer-elapsed"></div>
+    <button id="timer-close" class="btn-secondary">閉じる</button>
+  </div>
+
+  <!-- マスター編集モーダル -->
+  <div id="master-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>マスター管理</h3>
+        <button id="close-master" class="btn-secondary">閉じる</button>
+      </div>
+      <div id="master-content"></div>
+    </div>
+  </div>
+
+  <!-- フラッグ詳細ポップアップ -->
+  <div id="flag-popup" class="hidden">
+    <div id="flag-popup-content"></div>
+    <button id="flag-popup-close" class="btn-secondary">閉じる</button>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/data-store.js"></script>
+  <script src="js/master.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/order.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/review.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js');
+    }
+  </script>
+</body>
+</html>
